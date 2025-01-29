@@ -41,6 +41,27 @@ def parse_qdpx(filepath: str,
 
     Returns:
         List[Dict]: List of dictionaries with citation information.
+
+    Anntoation dicts contain the following keys:
+        doc_id:                 original id of the document in atlas.ti project
+                                (starting at 1)
+        citation_original:      original text of the citation
+        code:                   code in the atlas.ti codebook
+        start:                  start position as a string index of the
+                                document's text
+        end:                    end position as a string index of the
+                                document's text
+        start_atlas.ti:         original atlas.ti start position, referring to
+                                the document's paragraphs (starting at 1)
+        end_atlas.ti:           original atlas.ti end position, referring to the
+                                document's paragraphs (starting at 1)
+        citation_standardized:  (prototype) standardized version of the citation
+                                text, currently trying to match full sentences
+                                identified by spaCy
+        file:                   name of the original plain text file in atlas.ti
+                                project
+        coder:                  name or abbreviation of coding researcher as
+                                specified by the `coder` parameter
     """
 
     def add_spacy_docs(documents):
@@ -50,7 +71,10 @@ def parse_qdpx(filepath: str,
                 document["doc"] = spacy_nlp(text)
             else:
                 document["doc"] = None
-            # paragraphs = text.split("\n")
+
+    def add_paragraphs(documents):
+        for document in documents:
+            document["paragraphs"] = make_paragraphs(document["text"])
 
     def sort_and_standardize(documents):
         for document in documents:
@@ -70,12 +94,15 @@ def parse_qdpx(filepath: str,
         all_annotations = []
         for idx, document in enumerate(documents):
             for a in document["annotations"]:
+                start_p, end_p = assign_paragraphs(a, document["paragraphs"])
                 for tag in a[2]:
                     _dict = {
                         "doc_id": idx,
                         "file": document["name"],
                         "start": a[0],
                         "end": a[1],
+                        "start_atlas.ti": start_p,
+                        "end_atlas.ti": end_p,
                         "citation_original": document["text"][a[0]:a[1]],
                         "citation_standardized": a[5],
                         "code": tag,
@@ -96,6 +123,7 @@ def parse_qdpx(filepath: str,
                             "standardization.")
         add_spacy_docs(documents)
 
+    add_paragraphs(documents)
     sort_and_standardize(documents)
     all_annotations = extract_annotations(documents)
 
@@ -250,3 +278,42 @@ def strip_extracted_text(text: str, cutoff: bool = False) -> str:
             return parts[0]
     else:
         return text
+
+
+def make_paragraphs(text: str) -> List[Dict]:
+    """Function to create paragraphs with information about length and offset to
+    match original paragraphs in atlas.ti documents.
+    """
+    paragraphs = text.split("\n")
+    paragraphs = [
+        {"id": idx + 1,
+         "text": p,
+         "length": len(p)
+         } for idx, p in enumerate(paragraphs)]
+
+    for idx, p in enumerate(paragraphs):
+        if idx == 0:
+            p["start"] = 0
+        if idx > 0:
+            last_p = paragraphs[idx - 1]
+            p["start"] = last_p["start"] + last_p["length"] + 1
+        p["end"] = p["start"] + p["length"]
+
+    return paragraphs
+
+
+def assign_paragraphs(annotation: Tuple, paragraphs: List[Dict]) -> Tuple:
+    """Match an annotation in a document with the document paragraphs and return
+    its start and end paragraph."""
+    start_p, end_p = None, None
+    for p in paragraphs:
+        span_range = range(p["start"], p["end"] + 1)
+        if annotation[0] in span_range:
+            start_p = p["id"]
+            break
+    for p in paragraphs:
+        span_range = range(p["start"], p["end"] + 1)
+        if annotation[1] in span_range:
+            end_p = p["id"]
+            break
+    return start_p, end_p
