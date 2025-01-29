@@ -65,6 +65,7 @@ def parse_qdpx(filepath: str,
     """
 
     def add_spacy_docs(documents):
+        print("Creating spaCy docs...")
         for document in tqdm(documents):
             text = document["text"]
             if len(document["annotations"]) > 0:

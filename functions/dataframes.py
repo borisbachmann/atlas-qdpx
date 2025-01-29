@@ -1,7 +1,9 @@
 from typing import Dict, List, Optional
-import pandas as pd
 
-from bulk import parse_qdpx_directory
+import pandas as pd
+import spacy
+
+from functions.bulk import parse_qdpx_directory
 
 def extract_code_group_dfs(input_df: pd.DataFrame,
                            code_groups: Dict[str, List[str]],
@@ -22,7 +24,8 @@ def extract_code_group_dfs(input_df: pd.DataFrame,
     misc_df = input_df[~input_df["code"].isin([code for codes
                                                in code_groups.values()
                                                for code in codes])]
-    all_dfs[misc_group] = misc_df
+    if len(misc_df) > 0:
+        all_dfs[misc_group] = misc_df
 
     return all_dfs
 
@@ -45,22 +48,35 @@ def save_output_dfs(input_df: pd.DataFrame,
     additional df will be saved for each code group. The file name will be
     code group will be saved to a separate file.
     """
-    input_df.to_csv(f"{output_path}/{project_name}_all.csv")
+    print("Saving Dataframes to...")
+    input_df_path = f"{output_path}/{project_name}_all.csv"
+    input_df.to_csv(input_df_path)
+    print("  ", input_df_path)
     if code_groups:
         dfs = extract_code_group_dfs(input_df, code_groups)
         for group, df in dfs.items():
-            df.to_csv(f"{output_path}/{project_name}_{group}.csv")
+            group_df_path = f"{output_path}/{project_name}_{group}.csv"
+            df.to_csv(group_df_path)
+            print("  ", group_df_path)
 
 
 def project_folder_to_dfs(input_path: str,
                           output_path: str,
                           project_name: str,
-                          code_groups: Optional[Dict[str, List[str]]] = None
+                          code_groups: Optional[Dict[str, List[str]]] = None,
+                          standardize: bool = False,
+                          spacy_nlp: spacy.language.Language = None,
+                          cutoff: bool = False
                           ) -> None:
     """From a folder containing QDPX files, extract all annotations in CSV
     format and save them to a specified output folder. If code_groups is not
     None, additional CSV files will be saved for each code group. The
     project_name parameter is used to name the output files.
+
+    Standardization parameters (`standardize`, `spacy_nlp` and `cutoff`) can
+    be passed as for single projects.
     """
-    all_annotations = parse_qdpx_directory(input_path, as_df=True)
+    all_annotations = parse_qdpx_directory(input_path, as_df=True,
+                                           standardize=standardize,
+                                           spacy_nlp=spacy_nlp, cutoff=cutoff)
     save_output_dfs(all_annotations, output_path, project_name, code_groups)
