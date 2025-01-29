@@ -1,0 +1,19 @@
+# OS X specific
+.DS_Store
+
+# build-specific
+build
+
+# Pycharm
+__pycache__
+.idea
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Data
+data
+
+# Venv
+.venv
