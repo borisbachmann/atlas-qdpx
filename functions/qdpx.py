@@ -1,13 +1,20 @@
 # standard library
 import pathlib
 from collections import OrderedDict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 import zipfile
 import xml.etree.ElementTree as ET
 
+# external libraries
+import pandas as pd
+
+# internal
 from functions.constants import (CODEBOOK_QUERY, CODE_QUERY, DOCUMENT_QUERY,
                                  ANNOTATION_QUERY, CODEREF_QUERY)
+from functions.dataframes import make_clean_df
+from functions.paragraphs import make_paragraphs, assign_paragraphs
 from functions.standardization import Standardizer
+from functions.utils import list_files_by_type
 
 
 def parse_qdpx(filepath: str,
@@ -31,19 +38,17 @@ def parse_qdpx(filepath: str,
     Args:
         filepath (str): Path to the REFI-QDA export file.
         coder (str): Name of the coder.
-        standardizer (bool): Whether to standardize the citation spans.
-        spacy_nlp (spacy.language.Language): A spaCy nlp object. Must be
-            provided if standardize is set to True.
-        cutoff (bool): Whether to cut off leading headers in standardized
-            citations (prototype).
+        standardizer (bool): custom Class of the standardization.Standardizer
+            interface. If provided, the standardizer will be used to adjust
+            returned annotation data. Default is None.
 
     Returns:
         List[Dict]: List of dictionaries with citation information.
 
-    Anntoation dicts contain the following keys:
+    By default, anntoation dicts contain the following keys:
         doc_id:                 original id of the document in atlas.ti project
                                 (starting at 1)
-        citation_original:      original text of the citation
+        citation:               original text of the citation
         code:                   code in the atlas.ti codebook
         start:                  start position as a string index of the
                                 document's text
@@ -53,20 +58,24 @@ def parse_qdpx(filepath: str,
                                 the document's paragraphs (starting at 1)
         end_atlas.ti:           original atlas.ti end position, referring to the
                                 document's paragraphs (starting at 1)
-        citation_standardized:  (prototype) standardized version of the citation
-                                text, currently trying to match full sentences
-                                identified by spaCy
         file:                   name of the original plain text file in atlas.ti
                                 project
         coder:                  name or abbreviation of coding researcher as
                                 specified by the `coder` parameter
+
+    If a standardizer is used, the annotation dicts may contain additional
+    keys as specified by the standardizer's `custom_keys` attribute.
     """
 
     def add_paragraphs(documents):
+        """Add paragraph information to each document. Paragraphs are modeled
+        as implemented by Atlas.ti."""
         for document in documents:
             document["paragraphs"] = make_paragraphs(document["text"])
 
     def sort_and_standardize(documents):
+        """Sort annotations by start position and standardize them if a
+        standardizer is provided."""
         for document in documents:
             if len(document["annotations"]) > 0:
                 document["annotations"] = sorted(document["annotations"],
@@ -79,6 +88,8 @@ def parse_qdpx(filepath: str,
 
     def extract_annotations(documents,
                             custom_keys=None):
+        """Extract annotations from documents and return them as a list of
+        dictionaries."""
         all_annotations = []
         for idx, document in enumerate(documents):
             for a in document["annotations"]:
@@ -86,18 +97,19 @@ def parse_qdpx(filepath: str,
                 for tag in a[2]:
                     annotation_items = [
                         ("doc_id", idx),
-                        ("file", document["name"]),
+                        ("citation", document["text"][a[0]:a[1]]),
+                        ("code", tag),
                         ("start", a[0]),
                         ("end", a[1]),
                         ("start_atlas.ti", start_p),
                         ("end_atlas.ti", end_p),
-                        ("citation", document["text"][a[0]:a[1]]),
-                        ("code", tag),
+                        ("file", document["name"]),
                         ("coder", coder)
                     ]
                     if custom_keys:
                         for key, position in custom_keys.items():
-                            annotation_items.insert(-3, (key, a[position]))
+                            annotation_items.insert(-3,
+                                                    (key, a[position]))
                     annotation_dict = OrderedDict(annotation_items)
                     all_annotations.append(annotation_dict)
 
@@ -105,9 +117,6 @@ def parse_qdpx(filepath: str,
 
     documents, codes = read_qdpx(filepath)
 
-    # prepare spacy docs for each annotated atlas.ti document
-    # implemented as separate loop to show progress bar only in case of
-    # standardization
     if standardizer is not None:
         print("Standardizer found. Preprocessing documents...")
         if not isinstance(standardizer, Standardizer):
@@ -224,40 +233,39 @@ def read_qdpx(file: str) -> Tuple[List[Dict], Dict]:
         return docs, tags
 
 
-def make_paragraphs(text: str) -> List[Dict]:
-    """Function to create paragraphs with information about length and offset to
-    match original paragraphs in atlas.ti documents.
+def parse_qdpx_directory(input_path: str,
+                         as_df: bool,
+                         standardizer=None
+                         ) -> Union[List[Dict], pd.DataFrame]:
+    """From a path to a folder containing QDPX files, generate a single list of
+    annotations for all documents in each project. Project file names have to
+    include a `_somename` suffix for individual coders (e.g.
+    `atlas-ti-project_JRoe.qdpx`). The `coder` value is automatically generated
+    by extracting this suffix.
+
+    If as_df is set to `True` a single sorted pandas DataFrame will be returned
+    instead of a list of dicts.
+
+    Standardization parameters (`standardize`, `spacy_nlp` and `cutoff`) can
+    be passed as for single projects.
     """
-    paragraphs = text.split("\n")
-    paragraphs = [
-        {"id": idx + 1,
-         "text": p,
-         "length": len(p)
-         } for idx, p in enumerate(paragraphs)]
+    print("Reading Datatables from QDPX files...")
+    projects = list_files_by_type(input_path, "qdpx")
+    paths = [f"{input_path}/{project}" for project in projects]
+    for path in paths:
+        print("  ", path)
+    coders = [pathlib.Path(file).with_suffix("").name.split("_")[-1] for file
+              in projects]
 
-    for idx, p in enumerate(paragraphs):
-        if idx == 0:
-            p["start"] = 0
-        if idx > 0:
-            last_p = paragraphs[idx - 1]
-            p["start"] = last_p["start"] + last_p["length"] + 1
-        p["end"] = p["start"] + p["length"]
+    project_annotations = []
 
-    return paragraphs
+    for path, coder in zip(paths, coders):
+        print(f"Parsing annotations by {coder}")
+        project_annotations.append(parse_qdpx(path, coder, standardizer))
 
+    results = [dict_ for list_ in project_annotations for dict_ in list_]
 
-def assign_paragraphs(annotation: Tuple, paragraphs: List[Dict]) -> Tuple:
-    """Match an annotation in a document with the document paragraphs and return
-    its start and end paragraph."""
-    start_p, end_p = None, None
-    for p in paragraphs:
-        span_range = range(p["start"], p["end"] + 1)
-        if annotation[0] in span_range:
-            start_p = p["id"]
-            break
-    for p in paragraphs:
-        span_range = range(p["start"], p["end"] + 1)
-        if annotation[1] in span_range:
-            end_p = p["id"]
-            break
-    return start_p, end_p
+    if as_df:
+        return make_clean_df(results)
+    else:
+        return results

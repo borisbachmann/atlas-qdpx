@@ -1,9 +1,9 @@
 from typing import Dict, List, Optional
 
 import pandas as pd
-import spacy
 
-from functions.bulk import parse_qdpx_directory
+from functions.qdpx import parse_qdpx_directory
+
 
 def extract_code_group_dfs(input_df: pd.DataFrame,
                            code_groups: Dict[str, List[str]],
@@ -77,3 +77,9 @@ def project_folder_to_dfs(input_path: str,
     all_annotations = parse_qdpx_directory(input_path, as_df=True,
                                            standardizer=standardizer)
     save_output_dfs(all_annotations, output_path, project_name, code_groups)
+
+
+def make_clean_df(annotations: List[Dict]) -> pd.DataFrame:
+    """Create a clean dataframe from a list of annotation dictionaries."""
+    return (pd.DataFrame(annotations).sort_values(["doc_id", "start"]).
+            reset_index(drop=True))
