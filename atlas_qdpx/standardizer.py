@@ -53,10 +53,11 @@ class SpacyStandardizer:
     """
     def __init__(self,
                  nlp: spacy.language.Language,
-                 custom_keys: Optional[Dict[str, int]] = None,
                  cutoff: bool = False):
         self.nlp = nlp
-        self.custom_keys = custom_keys
+        self.custom_keys = {"citation_standardized": 5,
+                            "start_standardized": 6,
+                            "end_standardized": 7}
         self.cutoff = cutoff
 
     def preprocess(self, documents: List[Dict]) -> List[Dict]:
@@ -118,24 +119,31 @@ class SpacyStandardizer:
         start_sent, start_char = find_first_sentence(start, sents)
         end_sent, end_char = find_last_sentence(end, sents)
 
-        text = self._strip_extracted_text(doc.text[start_char:end_char],
-                                    cutoff=self.cutoff)
+        text, new_start, new_end = (
+            self._strip_extracted_text(doc.text, start_char, end_char,
+                                       cutoff=self.cutoff))
 
-        return start, end, tag, start_sent, end_sent, text
+        return start, end, tag, start_sent, end_sent, text, new_start, new_end
 
     def _strip_extracted_text(self,
-                              text: str,
+                              doc_text: str,
+                              start: int,
+                              end: int,
                               cutoff: bool = False
-                              ) -> str:
+                              ) -> Tuple[str, int, int]:
         """Strip extracted text from surplus line breaks and possible leading
-        headers.
+        headers. Returns stripped text, new start and end positions. If cutoff
+        the heuristic will try to cut off leading headers by splitting the text
+        at the first line break.
         """
-        text = text.strip()
+        text = doc_text[start:end].strip()
+        new_start = start + (len(doc_text[start:end]) - len(text))
+        new_end = end - (len(doc_text[start:end]) - len(text.rstrip()))
+
         if cutoff:
-            parts = text.split("\n")
+            parts = text.split("\n", 1)
             if len(parts) > 1:
-                return parts[1]
-            else:
-                return parts[0]
-        else:
-            return text
+                new_start += len(parts[0]) + 1
+                text = parts[1]
+
+        return text, new_start, new_end

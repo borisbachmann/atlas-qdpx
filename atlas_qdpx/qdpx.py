@@ -9,12 +9,12 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 
 # internal
-from functions.constants import (CODEBOOK_QUERY, CODE_QUERY, DOCUMENT_QUERY,
+from .constants import (CODEBOOK_QUERY, CODE_QUERY, DOCUMENT_QUERY,
                                  ANNOTATION_QUERY, CODEREF_QUERY)
-from functions.dataframes import make_clean_df
-from functions.paragraphs import make_paragraphs, assign_paragraphs
-from functions.standardization import Standardizer
-from functions.utils import list_files_by_type
+from .dataframes import annotations_to_df
+from .paragraphs import make_paragraphs, assign_paragraphs
+from .standardizer import Standardizer
+from .utils import list_files_by_type
 
 
 def parse_qdpx(filepath: str,
@@ -108,7 +108,7 @@ def parse_qdpx(filepath: str,
                     ]
                     if custom_keys:
                         for key, position in custom_keys.items():
-                            annotation_items.insert(-3,
+                            annotation_items.insert(-2,
                                                     (key, a[position]))
                     annotation_dict = OrderedDict(annotation_items)
                     all_annotations.append(annotation_dict)
@@ -266,6 +266,6 @@ def parse_qdpx_directory(input_path: str,
     results = [dict_ for list_ in project_annotations for dict_ in list_]
 
     if as_df:
-        return make_clean_df(results)
+        return annotations_to_df(results)
     else:
         return results

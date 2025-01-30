@@ -2,8 +2,6 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from functions.qdpx import parse_qdpx_directory
-
 
 def extract_code_group_dfs(input_df: pd.DataFrame,
                            code_groups: Dict[str, List[str]],
@@ -60,26 +58,7 @@ def save_output_dfs(input_df: pd.DataFrame,
             print("  ", group_df_path)
 
 
-def project_folder_to_dfs(input_path: str,
-                          output_path: str,
-                          project_name: str,
-                          code_groups: Optional[Dict[str, List[str]]] = None,
-                          standardizer=None
-                          ) -> None:
-    """From a folder containing QDPX files, extract all annotations in CSV
-    format and save them to a specified output folder. If code_groups is not
-    None, additional CSV files will be saved for each code group. The
-    project_name parameter is used to name the output files.
-
-    Standardization parameters (`standardize`, `spacy_nlp` and `cutoff`) can
-    be passed as for single projects.
-    """
-    all_annotations = parse_qdpx_directory(input_path, as_df=True,
-                                           standardizer=standardizer)
-    save_output_dfs(all_annotations, output_path, project_name, code_groups)
-
-
-def make_clean_df(annotations: List[Dict]) -> pd.DataFrame:
+def annotations_to_df(annotations: List[Dict]) -> pd.DataFrame:
     """Create a clean dataframe from a list of annotation dictionaries."""
     return (pd.DataFrame(annotations).sort_values(["doc_id", "start"]).
             reset_index(drop=True))
