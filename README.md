@@ -170,7 +170,7 @@ annoations = parse_qdpx(input_file,
 The basic function to extract annotations from QDA-REFI XML is based upon the gist 
 https://gist.github.com/Whadup/a795fac02f4405ca1b5a278799ce6125 by Lukas Pfahler.
 
-## Background
+## Acknowledgements
 
 The library was developed as part of the research project "Narrative Futures" at the Unversity of Wuppertal, Germany 
 (funded from 2023 to 20226 by the VolkswagenStiftung). The project aims to combine qualitative and quantitative 
