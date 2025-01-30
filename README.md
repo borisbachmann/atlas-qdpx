@@ -140,6 +140,29 @@ full sentences around citations and returns standardized citations and spans bas
 complete sentences (as if the coding unit would have been defined as at least one complete sentence). The class is 
 for demonstration purposes only and can be used to guide the implementation of custom standardizers.
 
+```python
+import spacy
+
+from atlas_qdpx import parse_qdpx
+from spacy_standardizer.spacy_standardizer import SpacyStandardizer
+
+input_file = "path/to/file.qdpx"
+coder = "coder_name"
+
+# load spacy model
+nlp = spacy.load("de_core_news_sm")
+
+# define standardizer (the cutoff parameter is optional and tries to cut off trailing headers sometimes included in 
+# spaCy sentences)
+standardizer = SpacyStandardizer(nlp,
+                                 cutoff=True)
+
+# extract annotations
+annoations = parse_qdpx(input_file, 
+                        coder="coder_name", 
+                        standardizer=standardizer)
+```
+
 ## License
 ... To be Included
 
