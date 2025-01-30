@@ -233,10 +233,9 @@ def read_qdpx(file: str) -> Tuple[List[Dict], Dict]:
         return docs, tags
 
 
-def parse_qdpx_directory(input_path: str,
-                         as_df: bool,
-                         standardizer=None
-                         ) -> Union[List[Dict], pd.DataFrame]:
+def parse_qdpx_dir(input_path: str,
+                   standardizer=None
+                   ) -> Union[List[Dict], pd.DataFrame]:
     """From a path to a folder containing QDPX files, generate a single list of
     annotations for all documents in each project. Project file names have to
     include a `_somename` suffix for individual coders (e.g.
@@ -263,9 +262,4 @@ def parse_qdpx_directory(input_path: str,
         print(f"Parsing annotations by {coder}")
         project_annotations.append(parse_qdpx(path, coder, standardizer))
 
-    results = [dict_ for list_ in project_annotations for dict_ in list_]
-
-    if as_df:
-        return annotations_to_df(results)
-    else:
-        return results
+    return [dict_ for list_ in project_annotations for dict_ in list_]

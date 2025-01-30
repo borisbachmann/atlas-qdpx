@@ -1,6 +1,6 @@
 from typing import Optional, Dict, List
 
-from atlas_qdpx import parse_qdpx, parse_qdpx_directory, save_output_dfs
+from atlas_qdpx import parse_qdpx, parse_qdpx_dir, save_output_dfs
 from .dataframes import annotations_to_df
 from .standardizer import Standardizer
 
@@ -36,6 +36,6 @@ def folder_to_csv(input_path: str,
     Standardization parameters (`standardize`, `spacy_nlp` and `cutoff`) can
     be passed as for single projects.
     """
-    all_annotations = parse_qdpx_directory(input_path, as_df=True,
-                                           standardizer=standardizer)
+    all_annotations = parse_qdpx_dir(input_path, as_df=True,
+                                     standardizer=standardizer)
     save_output_dfs(all_annotations, output_path, project_name, code_groups)
