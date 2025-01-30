@@ -154,8 +154,7 @@ nlp = spacy.load("de_core_news_sm")
 
 # define standardizer (the cutoff parameter is optional and tries to cut off trailing headers sometimes included in 
 # spaCy sentences)
-standardizer = SpacyStandardizer(nlp,
-                                 cutoff=True)
+standardizer = SpacyStandardizer(nlp, cutoff=True)
 
 # extract annotations
 annoations = parse_qdpx(input_file, 
