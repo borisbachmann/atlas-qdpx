@@ -165,13 +165,17 @@ annoations = parse_qdpx(input_file,
 ## License
 ... To be Included
 
-## Credits
+## Dependencies
+This project uses the following third-party dependencies: 
+- [pandas](https://pandas.pydata.org/) library, licensed under the BSD 3-Clause License.
+- [spaCy](https://spacy.io/), licensed under the MIT License.
+- [tqdm](https://github.com/tqdm/tqdm), licensed under the MIT License.
 
+## Credits
 The basic function to extract annotations from QDA-REFI XML is based upon the gist 
 https://gist.github.com/Whadup/a795fac02f4405ca1b5a278799ce6125 by Lukas Pfahler.
 
 ## Acknowledgements
-
 The library was developed as part of the research project "Narrative Futures" at the Unversity of Wuppertal, Germany 
 (funded from 2023 to 20226 by the VolkswagenStiftung). The project aims to combine qualitative and quantitative 
 methods of text analysis to investigate narrative futures in the context of sustainability transformations.

@@ -136,16 +136,13 @@ def parse_qdpx(filepath: str,
 
     return all_annotations
 
+# function to extract annotations from QDA-REFI XML based upon the gist
+# https://gist.github.com/Whadup/a795fac02f4405ca1b5a278799ce6125 by Lukas Pfahler.
 
 def read_qdpx(file: str) -> Tuple[List[Dict], Dict]:
     """From a string representing a path to a REFI-QDA export file, extract all
     documents with their annotations as well as all codes with their internal ID
-    representations. The function has been adopted from
-    https://gist.github.com/Whadup/a795fac02f4405ca1b5a278799ce6125.
-    Changes were made to handle the specific structure of exports from Atlas.ti
-    (including multiple tags per annotation and specific naming conventions for
-    internal files in the QDPX archive. Additionally, some refactoring has been
-    done.
+    representations.
     """
 
     def extract_tags(root):
