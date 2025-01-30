@@ -64,9 +64,7 @@ def project_folder_to_dfs(input_path: str,
                           output_path: str,
                           project_name: str,
                           code_groups: Optional[Dict[str, List[str]]] = None,
-                          standardize: bool = False,
-                          spacy_nlp: spacy.language.Language = None,
-                          cutoff: bool = False
+                          standardizer=None
                           ) -> None:
     """From a folder containing QDPX files, extract all annotations in CSV
     format and save them to a specified output folder. If code_groups is not
@@ -77,6 +75,5 @@ def project_folder_to_dfs(input_path: str,
     be passed as for single projects.
     """
     all_annotations = parse_qdpx_directory(input_path, as_df=True,
-                                           standardize=standardize,
-                                           spacy_nlp=spacy_nlp, cutoff=cutoff)
+                                           standardizer=standardizer)
     save_output_dfs(all_annotations, output_path, project_name, code_groups)

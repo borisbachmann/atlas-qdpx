@@ -1,39 +1,37 @@
 # standard library
 import pathlib
+from collections import OrderedDict
 from typing import Dict, List, Tuple
 import zipfile
 import xml.etree.ElementTree as ET
 
-# external packages
-import spacy
-from tqdm.auto import tqdm
-
 from functions.constants import (CODEBOOK_QUERY, CODE_QUERY, DOCUMENT_QUERY,
                                  ANNOTATION_QUERY, CODEREF_QUERY)
+from functions.standardization import Standardizer
 
 
 def parse_qdpx(filepath: str,
                coder: str,
-               standardize: bool = False,
-               spacy_nlp: spacy.language.Language = None,
-               cutoff: bool = False) -> List[Dict]:
+               standardizer: Standardizer = None
+               ) -> List[Dict]:
     """From a string representing a path to a REFI-QDA export file from
     atlas.ti, extract all annotations in the project as a list of dictionaries.
     The dict contains one entry per code per citation (resulting in multiple
     entries for multiple-coded citations). Each entry contains information about
     the citation span, original text, its code and its place in the corpus
-    (document id and file) as well as the coder (i.e. researcher). If
-    `standardize` is set to true, the above standardization function is used to
-    generate a prototype standardized citation based upon spaCy. In this case,
-    a spaCy nlp object must be provided under the `spacy_nlp` parameter. The
-    `cutoff` parameter can be passed to the internal standardization function
-    to try to cope with leading headers sometimes merged into sentences by
-    spaCy (prototype).
+    (document id and file) as well as the coder (i.e. researcher).
+    A standardizer class can be passed to the function to handle adjustments
+    to individual annotations. The standardizer has to feature a `standardize`
+    method that takes a list of annotations and a document as input and returns
+    a list of standardized annotations, as well as a `preprocess` method that
+    handles the necessary preprocessing on a document level and takes a list of
+    documents as input. The standardizer can be used to e.g. adjust annotation
+    spans.
 
     Args:
         filepath (str): Path to the REFI-QDA export file.
         coder (str): Name of the coder.
-        standardize (bool): Whether to standardize the citation spans.
+        standardizer (bool): Whether to standardize the citation spans.
         spacy_nlp (spacy.language.Language): A spaCy nlp object. Must be
             provided if standardize is set to True.
         cutoff (bool): Whether to cut off leading headers in standardized
@@ -64,15 +62,6 @@ def parse_qdpx(filepath: str,
                                 specified by the `coder` parameter
     """
 
-    def add_spacy_docs(documents):
-        print("Creating spaCy docs...")
-        for document in tqdm(documents):
-            text = document["text"]
-            if len(document["annotations"]) > 0:
-                document["doc"] = spacy_nlp(text)
-            else:
-                document["doc"] = None
-
     def add_paragraphs(documents):
         for document in documents:
             document["paragraphs"] = make_paragraphs(document["text"])
@@ -82,34 +71,35 @@ def parse_qdpx(filepath: str,
             if len(document["annotations"]) > 0:
                 document["annotations"] = sorted(document["annotations"],
                                                  key=lambda x: x[0])
-                if standardize:
-                    document["annotations"] = [
-                        standardize_citation(a, document["doc"], cutoff=cutoff)
-                        for a in document["annotations"]]
-                else:
-                    document["annotations"] = [
-                        (a[0], a[1], a[2], None, None, None)
-                        for a in document["annotations"]]
+                if standardizer is not None:
+                    document["annotations"] = (
+                        standardizer.standardize(document["annotations"],
+                                                 document)
+                        )
 
-    def extract_annotations(documents):
+    def extract_annotations(documents,
+                            custom_keys=None):
         all_annotations = []
         for idx, document in enumerate(documents):
             for a in document["annotations"]:
                 start_p, end_p = assign_paragraphs(a, document["paragraphs"])
                 for tag in a[2]:
-                    _dict = {
-                        "doc_id": idx,
-                        "file": document["name"],
-                        "start": a[0],
-                        "end": a[1],
-                        "start_atlas.ti": start_p,
-                        "end_atlas.ti": end_p,
-                        "citation_original": document["text"][a[0]:a[1]],
-                        "citation_standardized": a[5],
-                        "code": tag,
-                        "coder": coder
-                    }
-                    all_annotations.append(_dict)
+                    annotation_items = [
+                        ("doc_id", idx),
+                        ("file", document["name"]),
+                        ("start", a[0]),
+                        ("end", a[1]),
+                        ("start_atlas.ti", start_p),
+                        ("end_atlas.ti", end_p),
+                        ("citation", document["text"][a[0]:a[1]]),
+                        ("code", tag),
+                        ("coder", coder)
+                    ]
+                    if custom_keys:
+                        for key, position in custom_keys.items():
+                            annotation_items.insert(-3, (key, a[position]))
+                    annotation_dict = OrderedDict(annotation_items)
+                    all_annotations.append(annotation_dict)
 
         return all_annotations
 
@@ -118,15 +108,22 @@ def parse_qdpx(filepath: str,
     # prepare spacy docs for each annotated atlas.ti document
     # implemented as separate loop to show progress bar only in case of
     # standardization
-    if standardize:
-        if spacy_nlp == None:
-            raise TypeError("A spacy nlp object must be provided for text "
-                            "standardization.")
-        add_spacy_docs(documents)
+    if standardizer is not None:
+        print("Standardizer found. Preprocessing documents...")
+        if not isinstance(standardizer, Standardizer):
+            raise TypeError("The provided standardizer does not adhere to "
+                            "the Standardizer protocol. Please provide a "
+                            "standardizer object with a `standardize` and "
+                            "`preprocess` method as well as a `custom_keys` "
+                            "attribute.")
+        documents = standardizer.preprocess(documents)
+        custom_keys = standardizer.custom_keys
+    else:
+        custom_keys = None
 
     add_paragraphs(documents)
     sort_and_standardize(documents)
-    all_annotations = extract_annotations(documents)
+    all_annotations = extract_annotations(documents, custom_keys)
 
     return all_annotations
 
@@ -225,60 +222,6 @@ def read_qdpx(file: str) -> Tuple[List[Dict], Dict]:
         docs = extract_docs(root)
 
         return docs, tags
-
-
-def standardize_citation(annotation: Tuple,
-                         doc: spacy.tokens.Doc,
-                         cutoff: bool = False) -> Tuple:
-    """For an annotation based upon a string span, add a standardized span based
-    upon full spaCy sentences. Adds sentence ids for first and last sentence as
-    well as plain text.
-    """
-
-    def find_first_sentence(start, sents):
-        """Find the first sentence containing the start position."""
-        for idx, sent in enumerate(sents):
-            # correcte sentence end for some cases where trainling punctuation
-            # leads to sentence overlaps in spaCy
-            sent_end_char = sent.end_char
-            if sent.text.endswith("\n"):
-                sent_end_char -= 1
-            if start >= sent.start_char and sent_end_char >= start:
-                return idx + 1, sent.start_char
-        return None, None
-
-    def find_last_sentence(end, sents):
-        """Find the last sentence containing the end position."""
-        for idx, sent in enumerate(sents):
-            sent_end_char = sent.end_char
-            if sent.text.endswith("\n"):
-                sent_end_char -= 1
-            if end >= sent.start_char and sent_end_char >= end:
-                return idx, sents[idx].end_char
-        return None, None
-
-    start, end, tag = annotation[0], annotation[1], annotation[2]
-    sents = list(doc.sents)
-
-    start_sent, start_char = find_first_sentence(start, sents)
-    end_sent, end_char = find_last_sentence(end, sents)
-
-    text = strip_extracted_text(doc.text[start_char:end_char], cutoff=cutoff)
-
-    return start, end, tag, start_sent, end_sent, text
-
-def strip_extracted_text(text: str, cutoff: bool = False) -> str:
-    """Strip extracted text from surplus line breaks and possible leading headers.
-    """
-    text = text.strip()
-    if cutoff:
-        parts = text.split("\n")
-        if len(parts) > 1:
-            return parts[1]
-        else:
-            return parts[0]
-    else:
-        return text
 
 
 def make_paragraphs(text: str) -> List[Dict]:

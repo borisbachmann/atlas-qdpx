@@ -10,9 +10,7 @@ from functions.utils import list_files_by_type
 
 def parse_qdpx_directory(input_path: str,
                          as_df: bool,
-                         standardize: bool = False,
-                         spacy_nlp: spacy.language.Language = None,
-                         cutoff: bool = False
+                         standardizer=None
                          ) -> Union[List[Dict], pd.DataFrame]:
     """From a path to a folder containing QDPX files, generate a single list of
     annotations for all documents in each project. Project file names have to
@@ -38,8 +36,7 @@ def parse_qdpx_directory(input_path: str,
 
     for path, coder in zip(paths, coders):
         print(f"Parsing annotations by {coder}")
-        project_annotations.append(parse_qdpx(path, coder, standardize,
-                                              spacy_nlp, cutoff))
+        project_annotations.append(parse_qdpx(path, coder, standardizer))
 
     results = [dict_ for list_ in project_annotations for dict_ in list_]
 
