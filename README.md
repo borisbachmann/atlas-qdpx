@@ -1,9 +1,9 @@
 # atlas_qdpx
 
-Atlas-qdpx is a library to handle QDA-REFI exports from the atlas.ti QDA (Qualitative Data Analysis) software 
+Atlas-qdpx is a smalll library to handle QDA-REFI exports from the atlas.ti QDA (Qualitative Data Analysis) software 
 written in Python. The QDA-REFI format is a XML-based format that is used to exchange QDA data between different 
 software tools. The library provides a tools to extract citations and respective codes for all documents in one or 
-more a QDA-REFI files, to enable further analysis of the data.
+more a QDA-REFI files to enable further analysis of the data.
 
 ## Installation
 
@@ -173,6 +173,6 @@ The basic function to extract annotations from QDA-REFI XML is based upon the gi
 https://gist.github.com/Whadup/a795fac02f4405ca1b5a278799ce6125 by Lukas Pfahler.
 
 ## Acknowledgements
-The library was developed as part of the research project "Narrative Futures" at the University of Wuppertal, Germany 
-(funded from 2023 to 2026 by the VolkswagenStiftung). The project aims to combine qualitative and quantitative 
-methods of text analysis to investigate narrative futures in the context of sustainability transformations.
+The library's core funtionality was developed as part of the research project "Narrative Futures" at the University of 
+Wuppertal, Germany (funded from 2023 to 2026 by the VolkswagenStiftung). The project aims to combine qualitative and 
+quantitative methods of text analysis to investigate narrative futures in the context of sustainability transformations.
