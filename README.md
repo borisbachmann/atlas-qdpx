@@ -165,8 +165,11 @@ annoations = parse_qdpx(input_file,
 ## Dependencies
 This project uses the following third-party dependencies: 
 - [pandas](https://pandas.pydata.org/) library, licensed under the BSD 3-Clause License.
-- [spaCy](https://spacy.io/), licensed under the MIT License.
 - [tqdm](https://github.com/tqdm/tqdm), licensed under the MIT License.
+
+Additionally, the example standardizer uses the following third-party dependencies (not needed for the Atlas-qdpx 
+library):
+- [spaCy](https://spacy.io/), licensed under the MIT License.
 
 ## Credits
 The basic function to extract annotations from QDA-REFI XML is based upon the gist 

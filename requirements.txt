@@ -1,6 +1,6 @@
-de_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.8.0/de_core_news_sm-3.8.0-py3-none-any.whl
-ipykernel==6.29.5
-jupyter==1.1.1
 pandas==2.2.3
-spacy==3.8.4
 tqdm==4.67.1
+
+# for the SpacyStanzaTokenizer only
+de_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.8.0/de_core_news_sm-3.8.0-py3-none-any.whl
+spacy==3.8.4
