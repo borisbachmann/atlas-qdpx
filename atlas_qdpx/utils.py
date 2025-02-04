@@ -1,6 +1,7 @@
+# Reusable utility functions not bound to the main functionality of the toolkit.
+
 import os
 from typing import List
-
 
 def list_files_by_type(path: str, file_type: str) -> List[str]:
     """List files in a directory. Output can be printed, returned as list of

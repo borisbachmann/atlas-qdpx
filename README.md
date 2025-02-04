@@ -42,7 +42,7 @@ a single QDA-REFI file or a directory containing multiple files. The basic funct
 When calling on a single file, the Coder has to be specified as a parameter. When calling on a directory, the Coder 
 is derived from the file name, assuming the files carry a suffix with the coder's name (e.g. `file_coder.qdpx`).
 
-The library also includes three DataFrame functions, based upon the `pandas` library:
+The library also includes three basic DataFrame functions, based upon the `pandas` library:
 1. `annotations_to_df` creates a sorted pandas DataFrame from the list of dictionaries.
 2. `extract_code_group_dfs` creates a dictionary of DataFrames, each containing the annotations for a group of codes.
    Code groups have to be passed as a dictionary with the group name as key and a list of codes as values. Codes 
@@ -57,35 +57,35 @@ directory and saving the output to a directory (`project_to_csv`, `folder_to_csv
 #### Examples
 
 For a single file:
-    
+
 ```python
-from atlas_qdpx import parse_qdpx, annotations_to_df, extract_code_group_dfs, save_output_dfs, project_to_csv
+from atlas_qdpx import parse_qdpx, annotations_to_df, make_code_group_dfs, save_output_dfs, project_to_csv
 
 input_file = "path/to/file.qdpx"
 coder = "coder_name"
 
 # extract annotations
-annoations = parse_qdpx(input_file, coder="coder_name")
+annotations = parse_qdpx(input_file, coder="coder_name")
 
 # convert to DataFrame
-annoations_df = annotations_to_df(annoations)
+annotations_df = annotations_to_df(annotations)
 
 # extract code group dataframes
 code_groups = {"group_name_1": ["code1", "code2"],
                "group_name_2": ["code3", "code4"]}
-code_group_dfs = extract_code_group_dfs(annoations_df, code_groups=code_groups)
+code_group_dfs = make_code_group_dfs(annotations_df, code_groups=code_groups)
 
 # save output to csv
 output_dir = "path/to/output"
 project_name = "project_name"
-save_output_dfs(annoations_df, 
+save_output_dfs(annotations_df,
                 output_path=output_dir,
                 project_name=project_name,
                 code_groups=code_groups)
 
 # parse directly from file to csv
-project_to_csv(input_file, 
-               output_path=output_dir, 
+project_to_csv(input_file,
+               output_path=output_dir,
                project_name=project_name,
                coder=coder,
                code_groups=code_groups)
@@ -116,7 +116,67 @@ folder_to_csv(input_dir,
 Code group extraction and manual saving to CSV work the same way as for single files, as all annotations are colected 
 in a single DataFrame.
 
-### Advanced Usage: Standardization
+### Advanced Usage: 
+
+#### Transformations
+
+Atlas-qpdx also includes a `transformations` module with functions to transform the extracted data. Three 
+functions are included:
+
+1. `merge_citations`: Merges citations with matching spans and codes into a single annotation, creating a list of 
+   coders for each merged annotation.
+2. `group_overlaps`: Groups overlapping annotations, creating either a list of annotations or assigning a group 
+   identifier to each annotation.
+3. `extract_code_groups`: Extracts annotations for groups of codes, based upon a dictionary of code groups.
+
+```python
+from atlas_qdpx import parse_qdpx, merge_citations, group_overlaps, extract_code_groups
+
+input_file = "path/to/file.qdpx"
+coder = "coder_name"
+
+# extract annotations
+annotations = parse_qdpx(input_file, coder="coder_name")
+
+# parse directly from directory to csv
+code_groups = {"group_name_1": ["code1", "code2"],
+               "group_name_2": ["code3", "code4"]}
+
+# create dfs for all code groups, based upon merged and grouped annotations
+merged_annotations = merge_citations(annotations)
+code_group_annotations = extract_code_groups(merged_annotations, code_groups)
+for value in code_group_annotations.values():
+    value = group_overlaps(value, ouptut="numbered")
+```
+
+#### Review
+
+A basic functionality to create standardized review dataframes is also provided. The resulting dataframe format proved 
+useful for manual review of extracted data, e.g. in a collaborative Google sheet. It may not be suitable for all use 
+cases, but the function can be used as a starting point for custom review dataframes. If the data has been grouped 
+before (per the `group_overlaps` function above), data will be aggregated on a group level, allowing to review all codes 
+assigned to clusters of overlapping annotations.
+
+```python
+from atlas_qdpx import make_review_df
+
+output_path = "path/to/review_output"
+
+# re-use data from the previous example
+dfs = {}
+for group, value in code_group_annotations.items():
+    codes = code_groups[group]
+    df = annotations_to_df(value)
+    df = make_review_df(df, codes, output="plain")
+    dfs[group] = (df)
+
+# Save dataframes to disk
+output_path = "data/output/NSP_Narrative"
+for group, df in dfs.items():
+    df.to_csv(f"{output_path}/NSP_Narrative_codes_{group}.csv")
+```
+    
+#### Standardization
 
 Additionally, the library allows all basic functions (working upon QDPX files) to accept with an additional 
 `standardizer` parameter. This can be used to impose certain modifications on or extract derived attributes from the 
