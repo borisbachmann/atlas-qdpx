@@ -1,6 +1,6 @@
 from typing import Optional, Dict, List
 
-from atlas_qdpx import parse_qdpx, parse_qdpx_dir, save_output_dfs, extract_files
+from . import parse_qdpx, parse_qdpx_dir, save_output_dfs, extract_files
 from .dataframes import annotations_to_df
 from .standardizer import Standardizer
 

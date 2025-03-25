@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
-from atlas_qdpx.transformations import extract_code_groups, merge_citations
+from .transformations import extract_code_groups, merge_citations
 
 
 def make_code_group_dfs(annotations: Union[List[Dict], pd.DataFrame],
