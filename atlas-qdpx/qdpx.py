@@ -1,7 +1,7 @@
 # standard library
 import pathlib
 from collections import OrderedDict
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Optional
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -11,7 +11,6 @@ import pandas as pd
 # internal
 from .constants import (CODEBOOK_QUERY, CODE_QUERY, DOCUMENT_QUERY,
                                  ANNOTATION_QUERY, CODEREF_QUERY)
-from .dataframes import annotations_to_df
 from .paragraphs import make_paragraphs, assign_paragraphs
 from .standardizer import Standardizer
 from .utils import list_files_by_type
@@ -19,6 +18,7 @@ from .utils import list_files_by_type
 
 def parse_qdpx(filepath: str,
                coder: str,
+               project_name: Optional[str] = None,
                standardizer: Standardizer = None
                ) -> List[Dict]:
     """From a string representing a path to a REFI-QDA export file from
@@ -38,6 +38,9 @@ def parse_qdpx(filepath: str,
     Args:
         filepath (str): Path to the REFI-QDA export file.
         coder (str): Name of the coder.
+        project_name (str): Name of the project file. If None, the function will
+            derive the project name from the QDPX filename, which works for
+            projects exported from atlas.ti. (default: None)
         standardizer (bool): custom Class of the standardization.Standardizer
             interface. If provided, the standardizer will be used to adjust
             returned annotation data. Default is None.
@@ -115,7 +118,7 @@ def parse_qdpx(filepath: str,
 
         return all_annotations
 
-    documents, codes = read_qdpx(filepath)
+    documents, codes = read_qdpx(filepath, project_name)
 
     if standardizer is not None:
         print("Standardizer found. Preprocessing documents...")
@@ -139,10 +142,21 @@ def parse_qdpx(filepath: str,
 # function to extract annotations from QDA-REFI XML based upon the gist
 # https://gist.github.com/Whadup/a795fac02f4405ca1b5a278799ce6125 by Lukas Pfahler.
 
-def read_qdpx(file: str) -> Tuple[List[Dict], Dict]:
+def read_qdpx(file: str,
+              project_name: Optional[str] = None) -> Tuple[List[Dict], Dict]:
     """From a string representing a path to a REFI-QDA export file, extract all
     documents with their annotations as well as all codes with their internal ID
     representations.
+
+    Args:
+        file (str): Path to the REFI-QDA export file.
+        project_name (str): Name of the project file. If None, the function will
+            derive the project name from the QDPX filename, which works for
+            projects exported from atlas.ti. (default: None)
+
+    Returns:
+        Tuple[List[Dict], Dict]: Tuple containing a list of document dictionaries
+            and a dictionary of code representations.
     """
 
     def extract_tags(root):
@@ -198,9 +212,6 @@ def read_qdpx(file: str) -> Tuple[List[Dict], Dict]:
                 "annotations": annotations
                 }
 
-    def make_source_path(doc):
-        return f"sources/{doc.attrib['plainTextPath'].replace('internal://', '')}"
-
     def parse_annotation(annotation):
         """Parse a single annotation and return its span and associated codes."""
         start = int(annotation.attrib["startPosition"])
@@ -214,14 +225,8 @@ def read_qdpx(file: str) -> Tuple[List[Dict], Dict]:
 
         return start, end, codes
 
-    def get_qde_filename(file):
-        """Get the internal atlas.ti project filename based upon the QDPX archive
-        filename.
-        """
-        return pathlib.Path(file).with_suffix('.qde').name
-
     with zipfile.ZipFile(file) as archive:
-        project_filename = get_qde_filename(file)
+        project_filename = f"{project_name}.qde" or get_qde_filename(file)
         tree = ET.parse(archive.open(project_filename))
         root = tree.getroot()
         tags = extract_tags(root)
@@ -260,3 +265,47 @@ def parse_qdpx_dir(input_path: str,
         project_annotations.append(parse_qdpx(path, coder, standardizer))
 
     return [dict_ for list_ in project_annotations for dict_ in list_]
+
+def extract_files(file: str,
+                  project_name: Optional[str] = None
+                  ) -> List[Dict]:
+
+    def extract_docs(root):
+        """Query for docs and extract doc data."""
+        docs = []
+        xpath_query = DOCUMENT_QUERY
+        result_list = root.findall(xpath_query)
+        for doc in result_list:
+            dict_ = dict(parse_doc(doc))
+            docs.append(dict_)
+
+        return docs
+
+
+    def parse_doc(doc):
+        """Parse a single document and return its text and filename.
+        """
+        text = archive.open(make_source_path(doc), 'r').read().decode("utf-8")
+        name = doc.attrib['name'].replace("/", "_")
+
+        return {"text": text,
+                "name": name
+                }
+
+    with zipfile.ZipFile(file) as archive:
+        project_filename = f"{project_name}.qde" or get_qde_filename(file)
+        tree = ET.parse(archive.open(project_filename))
+        root = tree.getroot()
+        docs = extract_docs(root)
+
+        return docs
+
+
+def get_qde_filename(file):
+    """Get the internal atlas.ti project filename based upon the QDPX archive
+    filename.
+    """
+    return pathlib.Path(file).with_suffix('.qde').name
+
+def make_source_path(doc):
+    return f"sources/{doc.attrib['plainTextPath'].replace('internal://', '')}"
