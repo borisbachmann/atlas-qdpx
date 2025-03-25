@@ -1,6 +1,6 @@
-# atlas_qdpx
+# atlas-qdpx
 
-Atlas-qdpx is a smalll tool to handle QDA-REFI exports from the atlas.ti QDA (Qualitative Data Analysis) software 
+atlas-qdpx is a smalll tool to handle QDA-REFI exports from the atlas.ti QDA (Qualitative Data Analysis) software 
 written in Python. The QDA-REFI format is a XML-based format that is used to exchange QDA data between different 
 software tools. Atlas-qdpx helpts to extract citations and respective codes for all documents in one or multiple 
 QDA-REFI files quickly to enable further analysis of the data.
@@ -204,7 +204,7 @@ for demonstration purposes only and can be used to guide the implementation of c
 import spacy
 
 from atlas_qdpx import parse_qdpx
-from spacy_standardizer.spacy_standardizer import SpacyStandardizer
+from atlas_qdpx.spacy_standardizer.spacy_standardizer import SpacyStandardizer
 
 input_file = "path/to/file.qdpx"
 coder = "coder_name"
@@ -217,8 +217,8 @@ nlp = spacy.load("de_core_news_sm")
 standardizer = SpacyStandardizer(nlp, cutoff=True)
 
 # extract annotations
-annoations = parse_qdpx(input_file, 
-                        coder="coder_name", 
+annoations = parse_qdpx(input_file,
+                        coder="coder_name",
                         standardizer=standardizer)
 ```
 
