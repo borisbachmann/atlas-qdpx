@@ -3,6 +3,7 @@
 
 # build-specific
 build
+*.egg-info/
 
 # Pycharm
 __pycache__
