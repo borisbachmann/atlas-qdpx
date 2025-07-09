@@ -189,7 +189,7 @@ def read_qdpx(file: str,
         tags[guid] = name.replace(" ", "").replace("/", "-")
         parent = parent_map.get(entry, None)
 
-        if parent and parent.attrib.get("guid", None) in tags:
+        if parent is not None and parent.attrib.get("guid", None) in tags:
             tags[guid] = f"{tags[parent.attrib.get('guid', None)]}/{tags[guid]}"
 
     def parse_doc(doc):
@@ -226,7 +226,7 @@ def read_qdpx(file: str,
         return start, end, codes
 
     with zipfile.ZipFile(file) as archive:
-        project_filename = f"{project_name}.qde" or get_qde_filename(file)
+        project_filename = get_qde_filename(file, project_name)
         tree = ET.parse(archive.open(project_filename))
         root = tree.getroot()
         tags = extract_tags(root)
@@ -293,7 +293,7 @@ def extract_files(file: str,
                 }
 
     with zipfile.ZipFile(file) as archive:
-        project_filename = f"{project_name}.qde" or get_qde_filename(file)
+        project_filename = get_qde_filename(file, project_name)
         tree = ET.parse(archive.open(project_filename))
         root = tree.getroot()
         docs = extract_docs(root)
@@ -301,11 +301,15 @@ def extract_files(file: str,
         return docs
 
 
-def get_qde_filename(file):
+def get_qde_filename(file, project_name):
     """Get the internal atlas.ti project filename based upon the QDPX archive
     filename.
     """
-    return pathlib.Path(file).with_suffix('.qde').name
+    if project_name is None:
+        return pathlib.Path(file).with_suffix('.qde').name
+    else:
+        return f"{project_name}.qde"
+
 
 def make_source_path(doc):
     return f"sources/{doc.attrib['plainTextPath'].replace('internal://', '')}"

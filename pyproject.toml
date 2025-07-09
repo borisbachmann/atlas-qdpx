@@ -3,16 +3,21 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "atlas-qdpx"
+name = "atlas_qdpx"
 version = "0.1.0"
-description = "A library for extracting and transforming annotations from QDA-REFI XML files, \
-specialized for atlas.ti exports."
+description = """A library for extracting and transforming annotations from QDA-REFI XML files, specialized for
+atlas.ti exports."""
 authors = [
     { name = "Boris Bachmann", email = "boris.bachmann@googlemail.com" }
 ]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.7"
+dependencies = [
+    "pandas>=1.0",
+    "tqdm>=4.0",
+    "spacy>=3.0"
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -22,13 +27,11 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/sereios/atlas-qdpx"
 
-[project.dependencies]
-pandas = ">=1.0"
-tqdm = ">=4.0"
-spacy = ">=3.0"
+#[tool.setuptools.packages.find]
+#where = ["atlas_qdpx"]
+
+#[tool.setuptools]
+#package-dir = { "" = "atlas_qdpx" }
 
 [tool.setuptools.packages.find]
-where = ["atlas_qdpx"]
-
-[tool.setuptools]
-package-dir = { "" = "atlas_qdpx" }
+where = ["."]

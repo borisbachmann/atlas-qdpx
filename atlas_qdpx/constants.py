@@ -12,6 +12,9 @@ CODE_QUERY = f"{{{NAMESPACE}}}Code"
 # Query to find documents
 DOCUMENT_QUERY = fr"./{{{NAMESPACE}}}Sources/{{{NAMESPACE}}}TextSource"
 
+# Query to find PDF documents
+DOCUMENT_QUERY_PDF = fr"./{{{NAMESPACE}}}Sources/{{{NAMESPACE}}}PDFSource"
+
 # Query to find annotations
 ANNOTATION_QUERY = fr"./{{{NAMESPACE}}}PlainTextSelection"
 
