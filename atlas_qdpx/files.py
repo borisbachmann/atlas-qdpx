@@ -17,11 +17,11 @@ def project_to_csv(input_path: str,
     will be saved for each code group. The project_name parameter is used to
     name the output files.
 
-    A standardizer object can be passed to standardize the text data."""
-    all_annotations = parse_qdpx(input_path, coder=coder,
+    A ``standardizer`` instance can be passed to standardize the text data."""
+    annotations = parse_qdpx(input_path, coder=coder,
                                  project_name=project_filename,
                                  standardizer=standardizer)
-    clean_df = annotations_to_df(all_annotations)
+    clean_df = annotations_to_df(annotations)
     save_output_dfs(clean_df, output_path, project_name, code_groups)
 
 
@@ -32,7 +32,7 @@ def project_to_files(input_path: str,
     """From a QDPX file, extract all files in plain text format and save them
     to a specified output folder.
 
-    A standardizer object can be passed to standardize the text data."""
+    A ``standardizer`` instance can be passed to standardize the text data."""
     files = extract_files(input_path, project_name=project_filename)
     print(f"Saving {len(files)} text files to: {output_path}")
     for file in files:
@@ -46,14 +46,11 @@ def folder_to_csv(input_path: str,
                   code_groups: Optional[Dict[str, List[str]]] = None,
                   standardizer=None
                   ) -> None:
-    """From a folder containing QDPX files, extract all annotations in CSV
-    format and save them to a specified output folder. If code_groups is not
-    None, additional CSV files will be saved for each code group. The
-    project_name parameter is used to name the output files.
-
-    Standardization parameters (`standardize`, `spacy_nlp` and `cutoff`) can
-    be passed as for single projects.
+    """Extract annotations from all QDPX files in a folder and save them as
+    CSV files in the given output directory. If ``code_groups`` are provided,
+    additional CSV files are created for each group.
+    A ``standardizer`` instance can be supplied to adjust the annotation data.
     """
-    all_annotations = parse_qdpx_dir(input_path, as_df=True,
+    annotations = parse_qdpx_dir(input_path, as_df=True,
                                      standardizer=standardizer)
-    save_output_dfs(all_annotations, output_path, project_name, code_groups)
+    save_output_dfs(annotations, output_path, project_name, code_groups)

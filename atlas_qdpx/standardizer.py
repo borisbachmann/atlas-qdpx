@@ -14,8 +14,8 @@ from typing import Tuple, Dict, List, Optional, Protocol, runtime_checkable
 
 @runtime_checkable
 class Standardizer(Protocol):
-    """Protocoll to define the interface for standardizers. Standardizers
-    should feature a `preprocess` and `standardize` method, the first applying
+    """Protocoll defining the interface for standardizers. Standardizers should
+    feature a `preprocess` and `standardize` method, the first applying
     necessary preprocessing on a doc level, the second handling annotations of
     individual documents.
     Standardizers should also feature an optional `custom_keys` parameter to

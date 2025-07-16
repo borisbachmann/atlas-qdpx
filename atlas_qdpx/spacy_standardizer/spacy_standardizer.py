@@ -1,7 +1,8 @@
-"""File contains example (prototype) standardizer aiming to adjust annotation
-spans to full sentences (i.e.: enforce coding unit (Mayring) to be a group
-of full sentences) as well as a protocoll to define the interface for such
-standardizer objects."""
+"""
+Example (prototype) standardizer to adjust annotation spans to full sentences.
+It demonstrates how to implement the required protocol for custom
+standardizers.
+"""
 
 from typing import List, Dict, Tuple
 

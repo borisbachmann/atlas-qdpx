@@ -1,8 +1,8 @@
 # atlas-qdpx
 
-atlas-qdpx is a smalll tool to handle QDA-REFI exports from the atlas.ti QDA (Qualitative Data Analysis) software 
-written in Python. The QDA-REFI format is a XML-based format that is used to exchange QDA data between different 
-software tools. Atlas-qdpx helpts to extract citations and respective codes for all documents in one or multiple 
+atlas-qdpx is a small tool to handle QDA-REFI exports from the atlas.ti QDA (Qualitative Data Analysis) software 
+written in Python. The QDA-REFI format is an XML-based format that is used to exchange QDA data between different 
+software tools. Atlas-qdpx helps to extract citations and respective codes for all documents in one or multiple 
 QDA-REFI files quickly to enable further analysis of the data.
 
 ## Installation
@@ -146,7 +146,7 @@ code_groups = {"group_name_1": ["code1", "code2"],
 merged_annotations = merge_citations(annotations)
 code_group_annotations = extract_code_groups(merged_annotations, code_groups)
 for value in code_group_annotations.values():
-    value = group_overlaps(value, ouptut="numbered")
+    value = group_overlaps(value, output="numbered")
 ```
 
 #### Review
@@ -217,7 +217,7 @@ nlp = spacy.load("de_core_news_sm")
 standardizer = SpacyStandardizer(nlp, cutoff=True)
 
 # extract annotations
-annoations = parse_qdpx(input_file,
+annotations = parse_qdpx(input_file,
                         coder="coder_name",
                         standardizer=standardizer)
 ```

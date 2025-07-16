@@ -124,9 +124,9 @@ def make_review_df(df, all_codes, output="data"):
         row["citation"] = (row["citation"], row["coder"])
         return row
 
-    def make_citation_dicts(tuple):
-        return {"key": tuple[0],
-                "coder": tuple[1]
+    def make_citation_dicts(citation_tuple):
+        return {"key": citation_tuple[0],
+                "coder": citation_tuple[1]
                 }
 
     def unpack_citations(list_):

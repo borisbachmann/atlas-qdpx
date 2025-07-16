@@ -244,11 +244,7 @@ def parse_qdpx_dir(input_path: str,
     `atlas-ti-project_JRoe.qdpx`). The `coder` value is automatically generated
     by extracting this suffix.
 
-    If as_df is set to `True` a single sorted pandas DataFrame will be returned
-    instead of a list of dicts.
-
-    Standardization parameters (`standardize`, `spacy_nlp` and `cutoff`) can
-    be passed as for single projects.
+    A standardizer object may be provided to adjust annotation data.
     """
     print("Reading Datatables from QDPX files...")
     projects = list_files_by_type(input_path, "qdpx")
