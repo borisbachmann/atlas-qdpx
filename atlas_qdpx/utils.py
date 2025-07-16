@@ -17,7 +17,7 @@ def list_files_by_type(path: str, file_type: str) -> List[str]:
     file_list = []
     for root, dirs, files in os.walk(path):
         for file in files:
-            if type is not None:
+            if file_type is not None:
                 if file.endswith(f".{file_type.lower()}"):
                     file_list.append(file)
             else:

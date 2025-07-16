@@ -17,7 +17,7 @@ def make_code_group_dfs(annotations: Union[List[Dict], pd.DataFrame],
     name. Optionally, a different name can be provided under the misc_group
     parameter.
     """
-    if annotations is not pd.DataFrame:
+    if not isinstance(annotations, pd.DataFrame):
         groups = extract_code_groups(annotations, code_groups, misc_group)
         return {group: annotations_to_df(matches)
                 for group, matches in groups.items()}
